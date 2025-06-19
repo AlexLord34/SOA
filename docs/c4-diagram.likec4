@@ -1,65 +1,151 @@
-// docs/c4-diagram.likec4
-
-// Контекст системы
-Person User "Пользователь" {
-  -> "Регистрируется, пишет посты, ставит лайки"
+specification {
+  element person
+  element system
+  element component
+  element containerDb
+  element boundary
+  
+  tag gateway {
+    color #4F46E5
+  }
+  tag service {
+    color #10B981
+  }
+  tag database {
+    color #F59E0B
+  }
+  tag broker {
+    color #EC4899
+  }
 }
 
-SystemBoundary SocialNetwork "Социальная сеть" {
-  System UI "Веб-интерфейс (Frontend)"
-  System ApiGateway "API Gateway"
+model {
+  // Пользователь
+  user = person 'User' 'Пользователь' {
+    description 'Зарегистрированный пользователь социальной сети'
+  }
+
+  // Социальная сеть (граница системы)
+  socialNetwork = boundary 'SocialNetwork' 'Социальная сеть' {
+    // Веб-интерфейс
+    ui = system 'UI' 'Веб-интерфейс' {
+      description 'Одностраничное приложение (React/Vue)'
+      style {
+        shape browser
+      }
+    }
+
+    // API Gateway
+    apiGateway = component 'ApiGateway' 'API Gateway' {
+      #gateway
+      description 'Маршрутизация запросов, единая точка входа'
+      technology 'Nginx/Kong'
+    }
+
+    // Сервис пользователей
+    userService = component 'UserService' 'User Service' {
+      #service
+      description 'Регистрация, аутентификация, управление пользователями'
+      technology 'Java/Python/Go'
+    }
+
+    // Сервис постов
+    postService = component 'PostService' 'Post Service' {
+      #service
+      description 'Управление постами и комментариями'
+      technology 'Node.js/Python'
+    }
+
+    // Сервис статистики
+    statsService = component 'StatsService' 'Stats Service' {
+      #service
+      description 'Аналитика лайков и просмотров'
+      technology 'Go/Python'
+    }
+
+    // База данных пользователей
+    userDb = containerDb 'UserDB' 'PostgreSQL (Users)' {
+      #database
+      technology 'PostgreSQL'
+      description 'Хранит данные пользователей и роли'
+    }
+
+    // База данных постов
+    postDb = containerDb 'PostDB' 'PostgreSQL (Posts)' {
+      #database
+      technology 'PostgreSQL'
+      description 'Хранит посты и комментарии'
+    }
+
+    // Аналитическая БД
+    statsDb = containerDb 'StatsDB' 'ClickHouse' {
+      #database
+      technology 'ClickHouse'
+      description 'Хранит аналитику в реальном времени'
+    }
+  }
+
+  // Внешние системы
+  kafka = system 'Kafka' 'Apache Kafka' {
+    #broker
+    description 'Брокер сообщений для событий'
+    technology 'Kafka'
+  }
+
+  // Связи
+  user -> ui 'Использует'
+  ui -> apiGateway 'REST API'
+  
+  apiGateway -> userService 'REST/gRPC'
+  apiGateway -> postService 'REST/gRPC'
+  apiGateway -> statsService 'REST'
+  
+  userService -> userDb 'JDBC/ORM'
+  postService -> postDb 'JDBC/ORM'
+  statsService -> statsDb 'HTTP API'
+  
+  postService -> kafka 'События: views, likes'
+  kafka -> statsService 'Потоковая обработка'
 }
 
-User -> UI "Взаимодействует через браузер"
-UI -> ApiGateway "Отправляет запросы (REST API)"
-
-// Контейнеры
-ContainerDb postgres_user "PostgreSQL" {
-  technology "PostgreSQL"
-  description "Хранит данные пользователей и роли"
+views {
+  view index {
+    title 'Социальная сеть - Общая архитектура'
+    include *
+    
+    style user {
+      color blue 
+    }
+  }
+  
+  view containers {
+    title 'Контейнеры и интеграции'
+    include socialNetwork.*
+    include kafka
+    
+    style apiGateway {
+      color indigo  // Фиолетовый для gateway
+    }
+    style userService {
+      color green  // Зеленый для сервисов
+    }
+    style postService {
+      color green  // Зеленый для сервисов
+    }
+    style statsService {
+      color green  // Зеленый для сервисов
+    }
+    style userDb {
+      color amber  // Оранжевый для БД
+    }
+    style postDb {
+      color amber  // Оранжевый для БД
+    }
+    style statsDb {
+      color amber  // Оранжевый для БД
+    }
+    style kafka {
+      color red // Красный для брокера
+    }
+  }
 }
-
-ContainerDb postgres_post "PostgreSQL" {
-  technology "PostgreSQL"
-  description "Хранит посты и комментарии"
-}
-
-ContainerDb clickhouse_stats "ClickHouse" {
-  technology "ClickHouse"
-  description "Аналитика лайков/просмотров"
-}
-
-Container user_service "User Service" {
-  technology "Java/Python/Go"
-  description "Регистрация, аутентификация, управление ролями"
-  -> postgres_user "Читает/записывает данные"
-}
-
-Container post_service "Post Service" {
-  technology "Node.js/Python"
-  description "Управление постами и комментариями"
-  -> postgres_post "Читает/записывает данные"
-}
-
-Container stats_service "Stats Service" {
-  technology "Go/Python"
-  description "Сбор статистики (лайки, просмотры)"
-  -> clickhouse_stats "Аналитические запросы"
-}
-
-Container api_gateway "API Gateway" {
-  technology "Nginx/Kong"
-  description "Единая точка входа для API"
-  -> user_service "REST/gRPC"
-  -> post_service "REST/gRPC"
-  -> stats_service "REST"
-}
-
-System_Ext kafka "Kafka" {
-  technology "Apache Kafka"
-  description "Брокер сообщений"
-}
-
-// Интеграции
-post_service -> kafka "Отправляет события: лайки, просмотры"
-kafka -> stats_service "Потребляет события для статистики"
