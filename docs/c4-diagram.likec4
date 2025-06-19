@@ -1,0 +1,65 @@
+// docs/c4-diagram.likec4
+
+// Контекст системы
+Person User "Пользователь" {
+  -> "Регистрируется, пишет посты, ставит лайки"
+}
+
+SystemBoundary SocialNetwork "Социальная сеть" {
+  System UI "Веб-интерфейс (Frontend)"
+  System ApiGateway "API Gateway"
+}
+
+User -> UI "Взаимодействует через браузер"
+UI -> ApiGateway "Отправляет запросы (REST API)"
+
+// Контейнеры
+ContainerDb postgres_user "PostgreSQL" {
+  technology "PostgreSQL"
+  description "Хранит данные пользователей и роли"
+}
+
+ContainerDb postgres_post "PostgreSQL" {
+  technology "PostgreSQL"
+  description "Хранит посты и комментарии"
+}
+
+ContainerDb clickhouse_stats "ClickHouse" {
+  technology "ClickHouse"
+  description "Аналитика лайков/просмотров"
+}
+
+Container user_service "User Service" {
+  technology "Java/Python/Go"
+  description "Регистрация, аутентификация, управление ролями"
+  -> postgres_user "Читает/записывает данные"
+}
+
+Container post_service "Post Service" {
+  technology "Node.js/Python"
+  description "Управление постами и комментариями"
+  -> postgres_post "Читает/записывает данные"
+}
+
+Container stats_service "Stats Service" {
+  technology "Go/Python"
+  description "Сбор статистики (лайки, просмотры)"
+  -> clickhouse_stats "Аналитические запросы"
+}
+
+Container api_gateway "API Gateway" {
+  technology "Nginx/Kong"
+  description "Единая точка входа для API"
+  -> user_service "REST/gRPC"
+  -> post_service "REST/gRPC"
+  -> stats_service "REST"
+}
+
+System_Ext kafka "Kafka" {
+  technology "Apache Kafka"
+  description "Брокер сообщений"
+}
+
+// Интеграции
+post_service -> kafka "Отправляет события: лайки, просмотры"
+kafka -> stats_service "Потребляет события для статистики"
