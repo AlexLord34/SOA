@@ -17,8 +17,8 @@ erDiagram
         uuid id PK
         string name "Название роли"
         string description
-        datetime created_at  // ДОБАВЛЕНО
-        boolean is_default   // ДОБАВЛЕНО
+        datetime created_at
+        boolean is_default
     }
     user_roles {
         uuid user_id FK
@@ -79,6 +79,6 @@ erDiagram
         int position PK
         uuid post_id
         int score
-        float trend_score  // ДОБАВЛЕНО
+        float trend_score
     }
 ```
