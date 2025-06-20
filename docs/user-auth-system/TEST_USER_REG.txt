@@ -1,0 +1,6 @@
+$body = @{
+    login = "test_user2"
+    password = "TestPassword456"
+    email = "test2@example.com"
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost/api/v1/register" -Method Post -ContentType "application/json" -Body $body

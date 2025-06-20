@@ -1,0 +1,8 @@
+$loginBody = @{
+    login = "test_user2"
+    password = "TestPassword456"
+} | ConvertTo-Json
+
+$loginResponse = Invoke-RestMethod -Uri "http://localhost/api/v1/login" -Method Post -ContentType "application/json" -Body $loginBody
+$token = $loginResponse.access_token
+Write-Host "Token: $token"
