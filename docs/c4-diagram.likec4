@@ -38,7 +38,7 @@ model {
     // API Gateway
     apiGateway = component 'ApiGateway' 'API Gateway' {
       #gateway
-      description 'Маршрутизация запросов, единая точка входа'
+      description 'Маршрутизация запросов (без агрегации данных)'
       technology 'Nginx/Kong'
     }
 
