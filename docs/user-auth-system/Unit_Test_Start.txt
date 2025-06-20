@@ -1,0 +1,2 @@
+$env:TESTING="true"
+python -m unittest discover -s tests -v
